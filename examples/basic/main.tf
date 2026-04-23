@@ -16,29 +16,40 @@ provider "azurerm" {
 module "event_hub" {
   source = "../.."
 
-  
-resource_group = {
-  name     = "example-rg"
-  location = "West Europe"
-}
+  resource_group_name = "example-rg"
+  location            = "West Europe"
 
-event_hub_namespace = {
-  name = "test-eventhub-namespace"
-  config = {
-    sku                      = "Standard"
-    capacity                 = 1
-    auto_inflate_enabled     = true
-    maximum_throughput_units = 2 # This value must be greater than `capacity`
+  eventhub_namespace_name     = "test-eventhub-namespace"
+  eventhub_namespace_sku      = "Premium"
+  eventhub_namespace_capacity = 2
 
+  eventhub_namespace_user_assigned_identity_ids = ["xxxxx-xxxxx"]
+
+  eventhub_namespace_customer_managed_key = {
+    key_vault_key_id          = "https://example-vault.vault.azure.net/keys/cmkrsa"
+    user_assigned_identity_id = "xxxxx-xxxxx"
   }
-}
 
-tags = {
-  Environment = "Production"
-}
+  eventhub_namespace_network_ruleset = {
+    trusted_service_access_enabled = true
+  }
 
-managed_identities = {
-  "user_assigned_resource_ids" = ["xxxxx-xxxxx"]
-}
+  event_hubs = {
+    "test-eventhub" = {
+      partition_count   = 4
+      message_retention = 7
+      consumer_groups   = ["consumer-a", "consumer-b"]
+      authorization_rules = {
+        sender = {
+          listen = false
+          send   = true
+          manage = false
+        }
+      }
+    }
+  }
 
+  tags = {
+    Environment = "Production"
+  }
 }
